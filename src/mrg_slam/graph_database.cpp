@@ -49,11 +49,16 @@ GraphDatabase::add_odom_keyframe( const builtin_interfaces::msg::Time &stamp, co
                                   pcl::PointCloud<PointT>::ConstPtr cloud, sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud_msg )
 {
     auto        uuid     = uuid_generator();
+    std::cout<<"---------------------"<<std::endl;
+
+    std::cout<<uuid<<std::endl;
     std::string uuid_str = boost::uuids::to_string( uuid );
 
     KeyFrame::Ptr kf = std::make_shared<KeyFrame>( own_name, stamp, odom, odom_keyframe_counter, accum_distance, uuid, uuid_str, slam_uuid,
                                                    slam_uuid_str, cloud, cloud_msg );
     odom_keyframe_counter++;
+    std::cout<<kf<<std::endl;
+    std::cout<<"======================================"<<std::endl;
 
     std::lock_guard<std::mutex> lock( keyframe_queue_mutex );
     keyframe_queue.push_back( kf );
@@ -63,16 +68,21 @@ bool
 GraphDatabase::flush_keyframe_queue( const Eigen::Isometry3d &odom2map )
 {
     std::lock_guard<std::mutex> lock( keyframe_queue_mutex );
+    
+    std::cout<<"HELLO--------------"<<std::endl;
 
     if( keyframe_queue.empty() ) {
         return false;
     }
+    std::cout<<"2222--------------"<<std::endl;
 
     auto logger = rclcpp::get_logger( "flush_keyframe_queue" );
+    std::cout<<"333--------------"<<std::endl;
 
     int num_processed = 0;
     for( int i = 0; i < std::min<int>( keyframe_queue.size(), max_keyframes_per_update ); i++ ) {
         num_processed = i;
+    std::cout<<"444--------------"<<std::endl;
 
         const auto &keyframe = keyframe_queue[i];
         // new_keyframes will be tested later for loop closure

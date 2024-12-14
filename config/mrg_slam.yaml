@@ -1,23 +1,23 @@
 # Parameters shared across all nodes or general parameters
 /**:
   ros__parameters:
-    model_namespace: "atlas" # is going to be used as namespace for all topics and tf frames
+    model_namespace: "mini_arista1" # is going to be used as namespace for all topics and tf frames
     use_sim_time: true # true for rosbags and for gazebo
-    points_topic: "velodyne_points"
-    imu_topic: "imu/data"
+    points_topic: "/lidar/points"
+    imu_topic: "/imu"
 
 # Transform between lidar and base_link
 lidar2base_publisher:
   ros__parameters:
     enable_lidar2base_publisher: true
-    lidar2base_x: 0.0012
+    lidar2base_x: 0.0
     lidar2base_y: 0.0
-    lidar2base_z: 0.716
+    lidar2base_z: 0.0
     lidar2base_roll: 0.0
     lidar2base_pitch: 0.0 # 0.261799 # 15 degrees inclined
     lidar2base_yaw: 0.0
     base_frame_id: "base_link" # default "base_link", is prepended by model_namespace
-    lidar_frame_id: "velodyne" # is prepended by model_namespace
+    lidar_frame_id: "lidar" # is prepended by model_namespace
 
 # A transform between the map and namespace/map frame
 # The final tf tree should for a dual robot experiment should look like: 
@@ -40,7 +40,7 @@ map2robotmap_publisher:
 # In case of using ros bags we need to publish the the time on the /clock topic using high frequency imu messages
 clock_publisher_ros2:
   ros__parameters:
-    imu_topic: "/gpsimu_driver/imu_data"
+    imu_topic: "/imu"
 
 # Parameters for the Velodyne driver and transform
 velodyne:
@@ -93,9 +93,9 @@ scan_matching_odometry_component:
     enable_odom_to_file: false
 
     # used for read_until
-    points_topic: "/velodyne_points"
+    points_topic: "/lidar/points"
     odom_frame_id: "odom" # default "odom", is prepended by model_namespace
-    robot_odom_frame_id: "robot_odom" # default "robot_odom", is prepended by model_namespace
+    robot_odom_frame_id: "odom" # default "robot_odom", is prepended by model_namespace
 
     keyframe_delta_trans: 1.0
     keyframe_delta_angle: 0.5236 # 0.5236 rad = 30 degrees
@@ -137,7 +137,7 @@ floor_detection_component:
     use_normal_filtering: true
     normal_filter_thresh: 20.0
     # used for read_until
-    points_topic: "/velodyne_points" # default "/velodyne_points", is prepended by model_namespace
+    points_topic: "/lidar/points" # default "/velodyne_points", is prepended by model_namespace
   
     # remappings are handled in the python respective launch file
 
@@ -146,9 +146,9 @@ mrg_slam_component:
   ros__parameters:
     enable_graph_slam: true
     # The own_name is set to the model_namespace in the launch file, so don't worry about it
-    own_name: "atlas" # is overwritten by the model_namespace
+    own_name: "mini_arista1" # is overwritten by the model_namespace
     # The names of the robots that are part of the multi-robot system need to be specified here, including the own robot
-    multi_robot_names: ["atlas", "bestla"]
+    multi_robot_names: ["mini_arista1", "arista2"]
     robot_remove_points_radius: 2.0
     # Initial pose
     # gravelpit tubs atlas x 10 y -13 z -2.15

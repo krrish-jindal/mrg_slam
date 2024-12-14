@@ -34,7 +34,7 @@ map2robotmap_publisher:
 # In case of using ros bags we need to publish the the time on the /clock topic using high frequency imu messages
 clock_publisher_ros2:
   ros__parameters:
-    imu_topic: "/gpsimu_driver/imu_data"
+    imu_topic: "/imu/data"
 
 # Prefiltering component parameters
 prefiltering_component:

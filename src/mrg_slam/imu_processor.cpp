@@ -21,10 +21,11 @@ ImuProcessor::onInit( rclcpp::Node::SharedPtr& _node )
     tf2_buffer   = std::make_unique<tf2_ros::Buffer>( node->get_clock() );
     tf2_listener = std::make_shared<tf2_ros::TransformListener>( *tf2_buffer );
 
+    node->declare_parameter<std::string>("imu_topic", "imu/data");
     imu_time_offset         = node->get_parameter( "imu_time_offset" ).as_double();
     enable_imu_orientation  = node->get_parameter( "enable_imu_orientation" ).as_bool();
     enable_imu_acceleration = node->get_parameter( "enable_imu_acceleration" ).as_bool();
-
+    imu_topic = node->get_parameter( "imu_topic" ).as_string();
     imu_orientation_edge_stddev  = node->get_parameter( "imu_orientation_edge_stddev" ).as_double();
     imu_acceleration_edge_stddev = node->get_parameter( "imu_acceleration_edge_stddev" ).as_double();
 

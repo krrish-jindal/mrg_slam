@@ -115,7 +115,6 @@ public:
         }
         RCLCPP_INFO( this->get_logger(), "Subscribing to odom topic %s", odom_sub_topic.c_str() );
         RCLCPP_INFO( this->get_logger(), "Subscribing to cloud topic %s", cloud_sub_topic.c_str() );
-        std::cout<<"###################################################"<< odom_sub_topic.c_str()<< cloud_sub_topic.c_str()<<"--------"<<std::endl;
         auto qos  = rmw_qos_profile_default;
         qos.depth = 256;
         odom_sub.subscribe( node_ros, odom_sub_topic, qos );
@@ -412,15 +411,12 @@ private:
     void cloud_callback( nav_msgs::msg::Odometry::ConstSharedPtr odom_msg, sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud_msg )
     {
 
-    std::cout<<"----------111-----------"<<std::endl;
-
         const builtin_interfaces::msg::Time &stamp = cloud_msg->header.stamp;
         Eigen::Isometry3d                    odom  = odom2isometry( odom_msg );
 
         if( base_frame_id.empty() ) {
             base_frame_id = cloud_msg->header.frame_id;
         }
-    std::cout<<cloud_msg<<std::endl;
 
         bool   update_required = keyframe_updater->update( odom );
         double accum_d         = keyframe_updater->get_accum_distance();
@@ -449,7 +445,6 @@ private:
                 } else {
                     map2odom = trans_odom2map.inverse();
                 }
-    std::cout<<"----------2222-----------"<<std::endl;
 
                 others_positions.resize( others_odom_poses.size() );
                 size_t i = 0;
@@ -488,7 +483,6 @@ private:
                         }
                     }
                 }
-    std::cout<<"----------444-----------"<<std::endl;
 
                 // remove points
                 pcl::ExtractIndices<PointT> extract;
@@ -509,7 +503,6 @@ private:
                 cloud_msg_removed.header.frame_id = base_frame_id;
                 other_robots_removed_points_pub->publish( cloud_msg_removed );
             }
-    std::cout<<"----------9999-----------"<<std::endl;
 
             // create keyframe and add it to the queue
             graph_database->add_odom_keyframe( stamp, odom, accum_d, cloud, cloud_msg_filtered );
@@ -955,10 +948,8 @@ private:
         // add keyframes and floor coeffs in the queues to the pose graph, TODO update trans_odom2map?
         bool keyframe_updated = graph_database->flush_keyframe_queue( trans_odom2map );
 
-        std::cout<<"NOW--------------"<<std::endl;
 
         if( !keyframe_updated ) {
-            std::cout<<"555--------------"<<std::endl;
 
             std_msgs::msg::Header read_until;
             read_until.stamp    = ( this->now() + rclcpp::Duration( 30, 0 ) ).operator builtin_interfaces::msg::Time();
@@ -974,7 +965,6 @@ private:
             & !floor_coeffs_processor.flush( graph_database, graph_slam )
             & !gps_processor.flush( graph_slam, graph_database->get_keyframes() )
             & !imu_processor.flush( graph_slam, graph_database->get_keyframes(), base_frame_id ) ) {
-            std::cout<<"111--------------"<<std::endl;
 
             optimization_timer->reset();
             return;

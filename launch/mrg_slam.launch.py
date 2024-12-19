@@ -34,6 +34,13 @@ PARAM_MAPPING = {
     'init_pose_topic': str,
     'result_dir': str,
     'registration_method': str,
+    'map2robotmap_x': float,
+    'map2robotmap_y': float,
+    'map2robotmap_z': float,
+    'map2robotmap_roll': float,
+    'map2robotmap_pitch': float,
+    'map2robotmap_yaw': float,
+    'pose': int,
 }
 
 
@@ -42,12 +49,40 @@ def overwrite_yaml_params_from_cli(yaml_params, cli_params):
     for key, value in cli_params.items():
         if key in yaml_params and value != '':
             # Since all parameters from cli in ROS2 are strings, we need to infer the correct data type
-            yaml_params[key] = PARAM_MAPPING[key](value)
+            # yaml_params[key] = PARAM_MAPPING[key](value)
+            try:
+                    yaml_params[key] = PARAM_MAPPING[key](value)
+            except ValueError:
+                    raise ValueError(f"Invalid value for parameter-------------------- '{key}': {value}")
             # Overwrite the boolean values since they are not correctly parsed, non empty strings are always True
             if value == 'true' or value == 'True':
                 yaml_params[key] = True
             elif value == 'false' or value == 'False':
                 yaml_params[key] = False
+
+    if 'enable_graph_slam' in yaml_params:
+
+        if 'pose' in cli_params and cli_params['pose'] != '':
+            # Convert the pose value from cli_params to a string and cast it to the correct type
+            pose = str(cli_params['pose'])
+
+            if pose == '1':
+                yaml_params['x'] = 3.70
+                yaml_params['y'] = -0.49
+                yaml_params['z'] = 0.5
+                yaml_params['roll'] = 0.0
+                yaml_params['pitch'] = 0.0
+                yaml_params['yaw'] = 3.10
+            elif pose == '2':
+                yaml_params['x'] = -6.79
+                yaml_params['y'] = 4.49
+                yaml_params['z'] = 0.5
+                yaml_params['roll'] = 0.0
+                yaml_params['pitch'] = 0.0
+                yaml_params['yaw'] = -1.534000
+            else:
+                pass
+
     return yaml_params
 
 
@@ -306,6 +341,7 @@ def launch_setup(context, *args, **kwargs):
         if model_namespace != '':
             mrg_slam_params['map_frame_id'] = model_namespace + '/' + mrg_slam_params['map_frame_id']
             mrg_slam_params['odom_frame_id'] = model_namespace + '/' + mrg_slam_params['odom_frame_id']
+            mrg_slam_params['init_odom_topic'] = model_namespace + '/' + mrg_slam_params['init_odom_topic']
         mrg_slam_remaps = [('imu/data', shared_params['imu_topic'])]
         print_remappings(mrg_slam_remaps, 'mrg_slam_component')
         mrg_slam_node = ComposableNode(

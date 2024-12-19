@@ -8,45 +8,6 @@ from launch.actions import OpaqueFunction, DeclareLaunchArgument
 from launch_ros.actions import Node, LoadComposableNodes
 from launch_ros.descriptions import ComposableNode
 
-'''  
-This launch file can be used to debug the mrg_slam multi robot setup. 
-For More information checkout https://gist.github.com/JADC362/a4425c2d05cdaadaaa71b697b674425f
-The debugging is limited to single node or the component container of a single robot with this approach
-To debug one of the nodes for a single robot for the two robot setup with a single computer, proceed as follows:
-We are going to debug the component container for the bestla robot, atlas is going to be run without debugging
-1.  colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
-2.  Launch the the full version of the multi robot launch file for robot atlas in one terminal with the following command:
-    ros2 launch mrg_slam mrg_slam.launch.py model_namespace:=atlas x:=10.0 y:=-13 z:=-2.15 start_rviz2:=false
-3.  Launch the full version of multi robot launch file for robot bestla in another terminal. We are going to debug the component container in this example.
-    We setup a gdbserver at localhost:3000 for the component_container only. This is achieved by adding the following two launch-prefix arguments to the launch command:
-    
-    ros2 launch --launch-prefix 'gdbserver localhost:3000' --launch-prefix-filter \b\w+component_container\b mrg_slam mrg_slam.launch.py model_namespace:=bestla x:=8.0 y:=-20 z:=-2.05 debug:=yes
-
-    Note the debug:=yes argument at the end of the launch command. For now debug just needs to be set. Set the prefix argument in the respective full launch file (step 2)
-4.  In vscode setup your launch.json to launch the debug version of this multi robot launch file, where you comment out all nodes except the component container
-    launch.json:
-    {
-        "version": "0.2.0",
-        "configurations": [
-            {
-                "name": "Launch mrg_slam",
-                "type": "ros",
-                "target": "/home/serov/code/cpp/Multi-Robot-Graph-SLAM/src/mrg_slam/launch/mrg_slam_debug.launch.py",
-                "request": "launch",
-                "arguments": ["model_namespace:=bestla", "x:=-15.0", "y:=-13.0", "z:=1.2", "use_sim_time:=true"],
-                "launch": [
-                    // "put nodes in here that should be launched but not debugged",
-                ]
-            }
-        ]
-    }
-5. 
-6.  Press F5 to start debugging
-
-If you want to debug another node, you need to move the prefix in the full launch file to the respective python Node(). Also you need to comment in the correct Node in this launch file.
-'''
-
-
 # Parameter type mapping to infer the correct data type from the cli argument string. This is necessary since all cli arguments are strings.
 # The parameters defined in the PARAM_MAPPING can be provided as cli arguments to overwrite the values from the yaml file.
 PARAM_MAPPING = {
@@ -106,7 +67,7 @@ def print_remappings(remappings, header=None):
 
 def launch_setup(context, *args, **kwargs):
 
-    config_file = 'mrg_slam.yaml'
+    config_file = 'mrg_slam_kitti.yaml'
     if 'config' in context.launch_configurations:
         config_file = context.launch_configurations['config']
     config_file_path = os.path.join(get_package_share_directory('mrg_slam'), 'config', config_file)
@@ -215,6 +176,12 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # Create the container node
+    # If the launch command provides the debug argument we add the prefix to start gdbserver (move this to the node you need to debug)
+    # More information can be found in hdl_multi_robot_graph_slam_debug.launch.py and at https://gist.github.com/JADC362/a4425c2d05cdaadaaa71b697b674425f
+    if 'debug' in context.launch_configurations:
+        prefix = ['gdbserver localhost:3000']
+    else:
+        prefix = []
     container_name = 'mrg_slam_container'
     if model_namespace != '':
         container_name = model_namespace + '/mrg_slam_container'  # used in composable nodes
@@ -224,7 +191,8 @@ def launch_setup(context, *args, **kwargs):
         name="mrg_slam_container",
         namespace=model_namespace,
         output='both',
-        parameters=[shared_params]
+        parameters=[shared_params],
+        prefix=prefix
     )
 
     # Launch the velodyne driver and pointcloud transform node if the lidar is enabled in the config
@@ -369,25 +337,19 @@ def launch_setup(context, *args, **kwargs):
         composable_node_descriptions=composable_nodes
     )
 
-    # Note that we only launch the container and the composable nodes, since we are debugging the component container
-    # The remaining nodes are launched in the full version of the launch file
-
     launch_description_list = []
-    # launch_description_list = [static_transform_publisher]
-    # if map2robotmap_publisher_params['enable_map2robotmap_publisher']:
-    #     launch_description_list.append(map2robotmap_publisher)
-    # if shared_params['start_rviz2']:
-    #     launch_description_list.append(rviz2)
-    # # For ROS2 foxy we need to add our own clock publisher, from ROS2 humble we can publish the clock topic with ros2 bag play <bag> --clock
-    # if os.path.expandvars('$ROS_DISTRO') != 'humble':
-    #     launch_description_list.append(clock_publisher_ros2)
-    # launch_description_list.append(map2odom_publisher_ros2)
+    if lidar2base_publisher_params['enable_lidar2base_publisher']:
+        launch_description_list.append(static_transform_publisher)
+    if map2robotmap_publisher_params['enable_map2robotmap_publisher'] and model_namespace != '':
+        launch_description_list.append(map2robotmap_publisher)
+    # For ROS2 foxy we need to add our own clock publisher, from ROS2 humble we can publish the clock topic with ros2 bag play <bag> --clock
+    if os.path.expandvars('$ROS_DISTRO') == 'foxy' or os.path.expandvars('$ROS_DISTRO') == 'eloquent':
+        launch_description_list.append(clock_publisher_ros2)
+    launch_description_list.append(map2odom_publisher_ros2)
     launch_description_list.append(container)
     launch_description_list.append(load_composable_nodes)
-    # launch_description_list = [container, load_composable_nodes]
-    # if multi_robot_communicator_params['enable_multi_robot_communicator']:
-    #     launch_description_list.append(multi_robot_communicator)
-
+    if scan_matching_odometry_params['enable_scan_matching_odometry'] and scan_matching_odometry_params['enable_odom_to_file']:
+        launch_description_list.append(odom_to_file_node)
     # Return nodes to our OpaqueFunction
     return launch_description_list
 

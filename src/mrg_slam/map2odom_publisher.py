@@ -15,7 +15,7 @@ class Map2OdomPublisher:
 
     def spin(self):
         if not hasattr(self, 'odom_msg'):
-            self.broadcaster.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), 'odom', 'map')
+            self.broadcaster.sendTransform((0, 0, 0), (0, 0, -0.7068252, 0.7073883), rospy.Time.now(), 'odom', 'map')
             return
 
         pose = self.odom_msg.transform

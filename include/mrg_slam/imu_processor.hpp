@@ -41,6 +41,7 @@ private:
     bool        enable_imu_acceleration;
     double      imu_acceleration_edge_stddev;
     std::string imu_orientation_edge_robust_kernel;
+    std::string imu_topic;
     double      imu_orientation_edge_robust_kernel_size;
     std::string imu_acceleration_edge_robust_kernel;
     double      imu_acceleration_edge_robust_kernel_size;
